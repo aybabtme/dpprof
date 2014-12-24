@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/aybabtme/dpprof"
@@ -32,7 +33,8 @@ func main() {
 		log.Printf("not found: %#v, %q", r, r.URL.String())
 		log.Printf("%s", buf.String())
 	})
-	mux.HandleFunc("/debug/pprof/profile", prof.Profile)
+	mux.HandleFunc("/debug/pprof/", prof.NamedProfile)
+	mux.HandleFunc("/debug/pprof/profile", prof.CPU)
 	mux.HandleFunc("/debug/pprof/symbol", prof.Symbol)
 	log.Fatal(http.ListenAndServe(*addr, mux))
 
@@ -42,13 +44,13 @@ type Profiler struct {
 	hosts []string
 }
 
-func (p *Profiler) Profile(w http.ResponseWriter, r *http.Request) {
+func (p *Profiler) CPU(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("proxy for %q to %v", r.URL.String(), p.hosts)
 
 	buf := bytes.NewBuffer(nil)
 
-	err := dpprof.Profile(buf, 30*time.Second, p.hosts...)
+	err := dpprof.CPU(buf, 30*time.Second, p.hosts...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -69,4 +71,25 @@ func (p *Profiler) Symbol(w http.ResponseWriter, r *http.Request) {
 	}
 
 	io.Copy(w, resp)
+}
+
+func (p *Profiler) NamedProfile(w http.ResponseWriter, r *http.Request) {
+
+	log.Printf("proxy for %q to %v", r.URL.String(), p.hosts)
+
+	name := strings.TrimPrefix(r.URL.Path, "/debug/pprof/")
+
+	code := 200
+	buf := bytes.NewBuffer(nil)
+	err := dpprof.NamedProfile(buf, name, p.hosts...)
+	if e, ok := err.(*dpprof.Error); ok {
+		code = e.Code
+		buf.WriteString(e.Msg)
+	} else if err != nil {
+		log.Print(err)
+		http.Error(w, err.Error(), code)
+		return
+	}
+	w.WriteHeader(code)
+	_, _ = buf.WriteTo(w)
 }

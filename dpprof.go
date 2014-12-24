@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/aybabtme/dpprof/profile"
 )
 
-func Profile(w io.Writer, duration time.Duration, hosts ...string) error {
+func CPU(w io.Writer, duration time.Duration, hosts ...string) error {
 	form := url.Values{
 		"seconds": {strconv.Itoa(int(duration.Seconds()))},
 	}
@@ -24,7 +26,7 @@ func Profile(w io.Writer, duration time.Duration, hosts ...string) error {
 		return err
 	}
 
-	r := 1.0 // / float64(len(dumps))
+	r := 1.0 / float64(len(dumps))
 
 	var merger *profile.Profile
 	for _, data := range dumps {
@@ -40,10 +42,6 @@ func Profile(w io.Writer, duration time.Duration, hosts ...string) error {
 	}
 
 	return merger.Write(w)
-}
-
-func Cmdline(hosts ...string) ([][]byte, error) {
-	return paraGet(nil, nil, nil, hosts, "/debug/pprof/cmdline")
 }
 
 func Symbol(r io.Reader, hosts ...string) (io.Reader, error) {
@@ -77,6 +75,46 @@ func Symbol(r io.Reader, hosts ...string) (io.Reader, error) {
 	}
 
 	return resp, err
+}
+
+func NamedProfile(w io.Writer, name string, hosts ...string) error {
+
+	dumps, err := paraGet(nil, nil, nil, hosts, "/debug/pprof/"+name)
+	if err != nil {
+		return err
+	}
+
+	r := 1.0 / float64(len(dumps))
+
+	var merger *profile.Profile
+	for _, data := range dumps {
+		prof, err := profile.Parse(bytes.NewBuffer(data))
+		if err != nil {
+			if strings.Contains(err.Error(), "unrecognized profile format") {
+				_, err = w.Write(data)
+				return err
+			}
+
+			if strings.Contains(err.Error(), "malformed profile format") {
+				_, err = w.Write(data)
+				return err
+			}
+
+			log.Printf(string(bytes.Join(dumps, []byte{})))
+
+			return err
+		}
+		if merger == nil {
+			merger = prof
+		} else if err := merger.Merge(prof, r); err != nil {
+			return err
+		}
+	}
+	return merger.Write(w)
+}
+
+func Cmdline(hosts ...string) ([][]byte, error) {
+	return paraGet(nil, nil, nil, hosts, "/debug/pprof/cmdline")
 }
 
 func paraGet(c *http.Client, hdr http.Header, form url.Values, hosts []string, path string) ([][]byte, error) {
@@ -213,5 +251,14 @@ func readError(r *http.Response) error {
 	if err != nil {
 		return err
 	}
-	return fmt.Errorf("%d: %s", r.StatusCode, string(data))
+	return &Error{Code: r.StatusCode, Msg: string(data)}
+}
+
+type Error struct {
+	Code int
+	Msg  string
+}
+
+func (e Error) Error() string {
+	return fmt.Sprintf("%d: %s", e.Code, e.Msg)
 }

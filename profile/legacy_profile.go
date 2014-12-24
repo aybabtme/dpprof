@@ -737,6 +737,7 @@ func parseContention(b []byte) (p *Profile, err error) {
 			break
 		}
 		key, val := strings.TrimSpace(attr[0]), strings.TrimSpace(attr[1])
+
 		var err error
 		switch key {
 		case "cycles/second":
@@ -808,6 +809,7 @@ func parseContention(b []byte) (p *Profile, err error) {
 	}
 
 	if err = parseAdditionalSections(l, r, p); err != nil {
+
 		return nil, err
 	}
 

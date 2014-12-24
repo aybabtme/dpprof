@@ -5,7 +5,7 @@ A proxy for using the Go pprof tool against multiple servers. Much WIP.
 ## Install
 
 ```bash
-go get github.com/aybabtme/dpprof/...
+go get github.com/aybabtme/dpprof/cmd/dpprofproxy
 ```
 
 ## Usage
@@ -46,9 +46,14 @@ Showing top 10 nodes out of 44 (cum >= 160ms)
       10ms  0.48% 99.05%      160ms  7.62%  compress/flate.(*huffmanEncoder).assignEncodingAndSize
 ```
 
+## Testing
+
+A stub service that uses some CPU resources is kept in `cmd/stubservice`.
+Start a couple of them on different ports, then
+
 
 ## TODO
 
 - [ ]: singleflight, can't have two pprof requests at the same time
 - [ ]: add stacktrace aggregation
-- [ ]: verify other profiles (only CPU tested) work
+- [ ]: make the threadcreate and block profiles work
