@@ -45,7 +45,7 @@ type Profiler struct {
 
 func (p *Profiler) CPU(w http.ResponseWriter, r *http.Request) {
 
-	log.Printf("proxy for %q to %v", r.URL.String(), p.hosts)
+	log.Printf("proxy %q", r.URL.String())
 
 	buf := bytes.NewBuffer(nil)
 
@@ -60,7 +60,7 @@ func (p *Profiler) CPU(w http.ResponseWriter, r *http.Request) {
 
 func (p *Profiler) Symbol(w http.ResponseWriter, r *http.Request) {
 
-	log.Printf("proxy for %q to %v", r.URL.String(), p.hosts)
+	log.Printf("proxy %q", r.URL.String())
 
 	resp, err := dpprof.Symbol(r.Body, p.hosts...)
 	if err != nil {
@@ -74,7 +74,7 @@ func (p *Profiler) Symbol(w http.ResponseWriter, r *http.Request) {
 
 func (p *Profiler) NamedProfile(w http.ResponseWriter, r *http.Request) {
 
-	log.Printf("proxy for %q to %v", r.URL.String(), p.hosts)
+	log.Printf("proxy %q", r.URL.String())
 
 	code := 200
 	buf := bytes.NewBuffer(nil)

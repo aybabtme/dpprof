@@ -54,6 +54,5 @@ Start a couple of them on different ports, then
 
 ## TODO
 
-- [ ]: singleflight, can't have two pprof requests at the same time
-- [ ]: add stacktrace aggregation
+- [ ]: singleflight, can't have two cpu pprof requests at the same time
 - [ ]: make the threadcreate and block profiles work
