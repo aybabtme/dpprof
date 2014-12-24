@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/aybabtme/dpprof"
@@ -77,11 +76,9 @@ func (p *Profiler) NamedProfile(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("proxy for %q to %v", r.URL.String(), p.hosts)
 
-	name := strings.TrimPrefix(r.URL.Path, "/debug/pprof/")
-
 	code := 200
 	buf := bytes.NewBuffer(nil)
-	err := dpprof.NamedProfile(buf, name, p.hosts...)
+	err := dpprof.NamedProfile(buf, r, p.hosts...)
 	if e, ok := err.(*dpprof.Error); ok {
 		code = e.Code
 		buf.WriteString(e.Msg)

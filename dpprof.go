@@ -77,11 +77,22 @@ func Symbol(r io.Reader, hosts ...string) (io.Reader, error) {
 	return resp, err
 }
 
-func NamedProfile(w io.Writer, name string, hosts ...string) error {
+func NamedProfile(w io.Writer, req *http.Request, hosts ...string) error {
 
-	dumps, err := paraGet(nil, nil, nil, hosts, "/debug/pprof/"+name)
+	dumps, err := paraGet(nil, req.Header, req.URL.Query(), hosts, req.URL.Path)
 	if err != nil {
 		return err
+	}
+
+	switch req.URL.Query().Get("debug") {
+	case "", "0", "1":
+		// continue
+	default:
+		for _, dump := range dumps {
+			_, _ = w.Write(dump)
+			_, _ = w.Write([]byte("\n"))
+		}
+		return nil
 	}
 
 	r := 1.0 / float64(len(dumps))
