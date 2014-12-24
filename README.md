@@ -49,7 +49,8 @@ Showing top 10 nodes out of 44 (cum >= 160ms)
 ## Testing
 
 A stub service that uses some CPU resources is kept in `cmd/stubservice`.
-Start a couple of them on different ports, then
+Start a couple of them on different ports, then start the proxy pointing to them.
+You should be able to play with `go tool pprof` and fetch some profiles.
 
 
 ## TODO
